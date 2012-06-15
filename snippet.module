@@ -3,7 +3,7 @@
 /**
  * @file
  * The module file for snippet.
- * 
+ *
  */
 
 /**
@@ -48,9 +48,9 @@ function snippet_ctools_plugin_api($owner, $api) {
  * Implements hook_menu().
  */
 function snippet_menu() {
-  
+
   $items = array();
-  
+
   $items[SNIPPETS_LIST_MENU] = array(
     'title' => 'Snippets: Manage',
     'description' => 'Edit and maintain the revisions of snippet.',
@@ -59,7 +59,7 @@ function snippet_menu() {
     'access arguments' => array('edit snippet content'),
     'file' => 'snippet.admin.inc',
   );
-  
+
   $items[SNIPPETS_LIST_MENU . '/%snippet/edit'] = array(
     'title' => 'Edit Snippets',
     'description' => 'Edit snippet.',
@@ -68,7 +68,7 @@ function snippet_menu() {
     'access arguments' => array('edit snippet content'),
     'file' => 'snippet.admin.inc',
   );
-  
+
   $items[SNIPPETS_LIST_MENU . '/%snippet/revisions'] = array(
     'title' => 'Revisions',
     'page callback' => 'snippet_revision_overview',
@@ -76,7 +76,7 @@ function snippet_menu() {
     'access arguments' => array('edit snippet content'),
     'file' => 'snippet.admin.inc',
   );
-  
+
   $items[SNIPPETS_LIST_MENU . '/%snippet/revisions/%/view'] = array(
     'title' => 'Revisions',
     'load arguments' => array(5),
@@ -85,7 +85,7 @@ function snippet_menu() {
     'access arguments' => array('edit snippet content'),
     'file' => 'snippet.admin.inc',
   );
-  
+
   $items[SNIPPETS_LIST_MENU . '/%snippet/revisions/%/revert'] = array(
     'title' => 'Revisions',
     'load arguments' => array(5),
@@ -94,7 +94,7 @@ function snippet_menu() {
     'access arguments' => array('edit snippet content'),
     'file' => 'snippet.admin.inc',
   );
-  
+
   return $items;
 }
 
@@ -104,21 +104,32 @@ function snippet_menu() {
 function snippet_permission() {
   $permissions = array();
   $permissions['administer snippet'] = array(
-      'title' => t('Administer snippet'), 
+      'title' => t('Administer snippet'),
       'description' => t('Perform administration tasks for snippet.'),
       'restrict access' => TRUE,
   );
-  
+
   $permissions['access snippet list'] = array(
-      'title' => t('Manage snippet'), 
+      'title' => t('Manage snippet'),
       'description' => t('Perform managing tasks for snippet.'),
   );
-  
+
   $permissions['edit snippet content'] = array(
-      'title' => t('Edit snippet'), 
+      'title' => t('Edit snippet'),
       'description' => t('Perform editing tasks for snippet content.'),
   );
-  
+
+  $permissions['edit snippet'] = array(
+      'title' => t('Add/Edit snippet'),
+      'description' => t('Perform adding/editing tasks for snippet.'),
+  );
+  $permissions['delete snippet'] = array(
+      'title' => t('Revert/Delete snippet'),
+      'description' => t('Perform revert/delete tasks for snippet.'),
+  );
+
+
+
   return $permissions;
 }
 
@@ -131,11 +142,11 @@ function snippet_load($snippet_name, $rid = NULL) {
   if ( $snippet_name) {
     ctools_include('export');
     $snippet = ctools_export_crud_load('snippet', $snippet_name);
-    
+
     $snippet_revision = db_select('snippet_revision', 'sr')
                         ->fields('sr', array())
                         ->condition('name', $snippet->name);
-    
+
     if ($rid) {
       $snippet_revision = $snippet_revision->condition('rid', $rid);
     }
@@ -171,7 +182,7 @@ function theme_snippet_content_show($vars) {
 
   // for viewing the preview of the snippet
   $in_preview = isset($vars['in_preview']) ? $vars['in_preview'] : 0;
-  
+
   $snippet_contextual_links = $heighlight = $heighlight_style = $edit = $preview_heading = "";
   if (user_access('edit snippet content') && (!$in_preview)) {
     $heighlight = "snippet-highlight";
@@ -179,7 +190,7 @@ function theme_snippet_content_show($vars) {
 
     // get the destination
     $destination = drupal_get_destination();
-    
+
     $operations['links']['edit'] = array(
       'title' => t('Edit this'),
       'href' => SNIPPETS_LIST_MENU . "/" . $vars['name'] . "/edit",
@@ -194,19 +205,23 @@ function theme_snippet_content_show($vars) {
     $snippet_contextual_links = theme('links', $operations);
     $snippet_contextual_links = "<div class='snippet-links'>{$snippet_contextual_links}</div>";
   }
-  
+
   $heighlight_style = $heighlight_style;
   if ($in_preview) {
     $heighlight_style = "style='background: #FFFFEA;'";
     $preview_heading = '<h3>' . t('Preview') . '</h3>';
   }
-  
+
   // this snippet_id would be used for submitting/updating the correct snippet
-  $snippet_id = $vars['name'] . (@$vars['rid']) ? ("-" . $vars['rid']) : '';
-  $content = "<div class = 'edit " . $edit . "' id = 'snippet-" . $snippet_id . "'>" . $vars['content'] . "</div>";
-  
+  $snippet_id = "snippet-" . $vars['name'] . ((@$vars['rid']) ? ("-" . $vars['rid']) : '');
+  $content = "<div class = 'edit' id = '" . $snippet_id . "'>" . $vars['content'] . "</div>";
+
   $title = "<h2 class = 'snippet-title'>" . $vars['title'] . "</h2>";
-  
+
+  if ($vars['hide_title'] && !$in_preview) {
+    $title = '';
+  }
+
   $output = "<div class = \"snippet-view {$heighlight}\" {$heighlight_style}>" . $preview_heading . $title . $content . $snippet_contextual_links . "</div>";
   return $output;
 }

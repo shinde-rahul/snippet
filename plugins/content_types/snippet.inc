@@ -2,8 +2,8 @@
 /**
  * @file
  * Snippets
- * 
- * Content type enable us to place the snippet as pane 
+ *
+ * Content type enable us to place the snippet as pane
  */
 /**
  * Plugins are described by creating a $plugin array which will be used
@@ -37,48 +37,40 @@ $plugin = array(
 function snippet_content_type_edit_form($form, &$form_state) {
   // get the form state i.e. configuration values to load the default values
   $conf = $form_state['conf'];
-  
+
   // Include the ctools helper 'export'
   ctools_include('export');
-  
+
   // Loads all the 'snippet' those are there in database
   $options = ctools_export_crud_load_all('snippet');
-  
+
   // Create an option array
   $snippet_options = array();
   foreach ($options as $key => $value) {
     $snippet_options[$key] = $value->title;
   }
-  
+
   if (!count($snippet_options)) {
     drupal_set_message(t('There is no "Snippets" available.'), 'error');
   }
-  
+
   // Form element : Select snippet
   $form['snippet'] = array(
-    '#type' => 'select', 
+    '#type' => 'select',
     '#title' => t('Snippets'),
     '#default_value' => $conf['snippet'],
     '#options' => $snippet_options,
-//    '#description' => t('Please select one of the snippet <br /> or simply select "Add new snippet" to add new snippet.'),
     '#description' => t('Please select one of the snippet.')
   );
-  return $form;
-}
 
-/**
- * Check for the entered is a duplicate or not
- * If name is already exist then set an error
- * @param $element
- * @param $form_state
- * @param $form
- */
-function _snippet_duplicate_check($element, &$form_state, $form) {
-  ctools_include('export');
-    $preset = ctools_export_crud_load('snippet', $form_state['values']['machine_name']);
-    if ($preset) {
-      form_set_error('name', 'Snippet already exists, snippet names have to be unique.');
-    }
+  $form['hide_title'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide snippet\'s title'),
+    '#default_value' => $conf['hide_title'],
+    '#description' => t('If checked, title will be hide.')
+  );
+
+  return $form;
 }
 
 /**
@@ -86,10 +78,11 @@ function _snippet_duplicate_check($element, &$form_state, $form) {
  */
 function snippet_content_type_edit_form_submit(&$form, &$form_state) {
   $form_state['conf']['snippet'] = $form_state['values']['snippet'];
+  $form_state['conf']['hide_title'] = $form_state['values']['hide_title'];
 }
 
 /**
- * 
+ *
  * @param $subtype
  * @param $conf
  * @param $panel_args
@@ -102,7 +95,8 @@ function snippet_content_type_render($subtype, $conf, $panel_args, &$context) {
   $variable['name'] = $snippet->name;
   $variable['title'] = ($conf['override_title']) ? $conf['override_title_text'] : $snippet->title;
   $variable['content'] = $snippet_revision->content;
-  
+  $variable['hide_title'] = $conf['hide_title'];
+
   $block = new stdClass();
   $block->content = theme('snippet_content_show', $variable);
   return $block;

@@ -8,7 +8,9 @@
 $plugin = array(
   'schema' => 'snippet',  // As defined in hook_schema().
   'access' => 'administer snippet',  // Define a permission users must have to access these pages.
-  
+  'create access' => 'edit snippet',
+  'delete access' => 'delete snippet',
+
   'export' => array(
     'admin_title' => "admin_title",
   ),
@@ -18,15 +20,21 @@ $plugin = array(
     'menu item' => 'snippet',
     'menu title' => 'Snippet: Add',
     'menu description' => 'Create a snippet that will be used as a pane.',
-    
+    // 'items' => array(
+    //   'revisions' => array(
+    //     'path' => '',
+    //     'title' => 'Revisions',
+    //     ),
+    //   ),
   ),
+
 
   // Define user interface texts.
   'title singular' => t('preset'),
   'title plural' => t('presets'),
   'title singular proper' => t('snippet preset'),
   'title plural proper' => t('snippet presets'),
-  
+
   'handler' => 'snippet_ctools_export_ui',
 );
 

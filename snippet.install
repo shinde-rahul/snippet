@@ -3,7 +3,7 @@
 /**
  * @file
  * Snippets Schema
- *
+ * 
  */
 
 /**
@@ -23,7 +23,7 @@ function snippet_schema() {
         'current_version' => 1,
       ),
     ),
-
+    
     'fields' => array(
       'sid' => array(
         'type' => 'serial',
@@ -59,10 +59,10 @@ function snippet_schema() {
       'name' => array('name'),
     ),
   );
-
+  
   $schema['snippet_revision'] = array(
     'description' => t('Stores information about each snippet version.'),
-
+    
     'fields' => array(
       'name' => array(
         'type' => 'varchar',
@@ -106,7 +106,7 @@ function snippet_schema() {
       ),
     ),
   );
-
+  
   return $schema;
 }
 
@@ -137,18 +137,4 @@ function snippet_update_7002(&$sandbox) {
   //db_add_field('snippet_revision', 'name', $snippets_machine_name);
   db_drop_field('snippet_revision', 'sid');
 }
-
-/**
- * Add name column to revision table
- *
- */
-function snippet_update_7003(&$sandbox) {
-  $content_format = array(
-        'type' => 'varchar',
-        'length' => '255',
-        'not null' => FALSE,
-      );
-  db_add_field('snippet_revision', 'name', $content_format);
-}
-
 
