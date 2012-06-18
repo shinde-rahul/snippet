@@ -89,13 +89,27 @@ function snippet_content_type_edit_form_submit(&$form, &$form_state) {
  * @param $context
  */
 function snippet_content_type_render($subtype, $conf, $panel_args, &$context) {
+  // get the snippet
   $snippet = ctools_export_crud_load('snippet', $conf['snippet']);
+  //get the revised data
   $snippet_revision = snippet_load($conf['snippet']);
-  $variable['rid'] = $snippet->rid;
+
+  // prepare array for theme
+  $variable['rid'] = $snippet_revision->rid;
   $variable['name'] = $snippet->name;
-  $variable['title'] = ($conf['override_title']) ? $conf['override_title_text'] : $snippet->title;
+  $title = "";
+  if(!$conf['hide_title']) {
+    $override_title_text = trim($conf['override_title_text']);
+
+    if (!$conf['override_title']) {
+      $title = ($snippet_revision->rid) ? $snippet_revision->title_revision  : $snippet->title;
+    }
+    elseif (!empty($override_title_text)) {
+      $title = $override_title_text;
+    }
+  }
+  $variable['title'] = $title;// ($conf['override_title']) ? $conf['override_title_text'] : $snippet->title;
   $variable['content'] = $snippet_revision->content;
-  $variable['hide_title'] = $conf['hide_title'];
 
   $block = new stdClass();
   $block->content = theme('snippet_content_show', $variable);

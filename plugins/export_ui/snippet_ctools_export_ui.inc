@@ -18,16 +18,9 @@ $plugin = array(
   // Define the menu item.
   'menu' => array(
     'menu item' => 'snippet',
-    'menu title' => 'Snippet: Add',
+    'menu title' => 'Snippet',
     'menu description' => 'Create a snippet that will be used as a pane.',
-    // 'items' => array(
-    //   'revisions' => array(
-    //     'path' => '',
-    //     'title' => 'Revisions',
-    //     ),
-    //   ),
   ),
-
 
   // Define user interface texts.
   'title singular' => t('preset'),

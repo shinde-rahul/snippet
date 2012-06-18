@@ -36,7 +36,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
       '#type' => 'textfield',
       '#title' => t('Title'),
       '#description' => t('Title for the textarea-exportible.'),
-      '#default_value' => $default_snippet->title,
+      '#default_value' => ($default_snippet->rid) ? $default_snippet->title_revision : $default_snippet->title,
       );
 
     $form['content'] = array(
@@ -91,9 +91,10 @@ class snippet_ctools_export_ui extends ctools_export_ui {
    */
   function load_item($item_name) {
     $snippet = ctools_export_crud_load($this->plugin['schema'], $item_name);
+
     $snippet_revision = db_select('snippet_revision', 'sr')
                         ->fields('sr', array())
-                        ->condition('name', $snippet->name)
+                        ->condition('name', $item_name)
                         ->condition('is_current', 1)
                         ->execute()->fetch();
 
@@ -102,11 +103,10 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     $snippet->timestamp = !empty($snippet_revision->timestamp) ? $snippet_revision->timestamp : NULL ;
     $snippet->is_current = !empty($snippet_revision->is_current) ? $snippet_revision->is_current : NULL ;
     $snippet->rid = !empty($snippet_revision->rid) ? $snippet_revision->rid : NULL ;
+    $snippet->title_revision = !empty($snippet_revision->title) ? $snippet_revision->title : NULL ;
 
     return $snippet;
   }
-
-
 
   /**
    * Called to save the final product from the edit form.
@@ -138,6 +138,10 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     }
   }
 
+  /**
+   *
+   *
+   */
   function list_form_submit(&$form, &$form_state) {
     // Filter and re-sort the pages.
     $plugin = $this->plugin;
@@ -193,7 +197,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
 
       $operations['snippets_revisions'] = array(
         'title' => t('Revisions'),
-        'href' => 'admin/structure/snippet-list/' . $name . '/revisions',
+        'href' => SNIPPET_MENU_PREFIX . '/' . $name . '/revisions',
         );
 
       $this->list_build_row($item, $form_state, $operations);
@@ -288,7 +292,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
 
     $header[] = array('data' => t('Name'), 'class' => array('ctools-export-ui-name'));
     $header[] = array('data' => t('Storage'), 'class' => array('ctools-export-ui-storage'));
-    $header[] = array('data' => t('Has Content'), 'class' => array('ctools-export-ui-name'));
+    $header[] = array('data' => t('Has Content/Revised'), 'class' => array('ctools-export-ui-name'));
     $header[] = array('data' => t('Operations'), 'class' => array('ctools-export-ui-operations'));
 
     return $header;
@@ -302,6 +306,7 @@ function _save_snippet($values) {
 
   $revision = new stdClass();
   $revision->name = $values['name'];
+  $revision->title = $values['title'];
   $revision->content = $values['content']['value'];
   $revision->content_format = $values['content']['format'];
   $revision->timestamp = strtotime('now');
@@ -340,7 +345,6 @@ function snippet_form_build_preview_callback($form, &$form_state) {
     $variable['title'] = $form_state['values']['title'];
     $variable['content'] = $form_state['values']['content']['value'];
     $variable['in_preview'] = 1;
-    $variable['hide_title'] = 1;
     return $form_state['snippet_preview_wrapper'] = theme('snippet_content_show', $variable);
   }
 }
