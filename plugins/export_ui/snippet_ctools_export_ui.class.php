@@ -41,7 +41,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
 
     $form['content'] = array(
       '#type' => 'text_format',
-      '#title' => t('Description'),
+      '#title' => t('Content'),
       '#description' => t('Description of this snippet.'),
       '#default_value' => $default_snippet->content,
       '#format' => $default_snippet->content_format,
@@ -89,15 +89,23 @@ class snippet_ctools_export_ui extends ctools_export_ui {
    *
    * @param $item_name
    */
-  function load_item($item_name) {
+  function load_item($item_name, $rid = NULL) {
+
     $snippet = ctools_export_crud_load($this->plugin['schema'], $item_name);
 
     $snippet_revision = db_select('snippet_revision', 'sr')
                         ->fields('sr', array())
-                        ->condition('name', $item_name)
-                        ->condition('is_current', 1)
-                        ->execute()->fetch();
+                        ->condition('name', $item_name);
+                        // ->condition('is_current', 1)
+                        // ->execute()->fetch();
+    if ($rid) {
+      $snippet_revision = $snippet_revision->condition('rid', $rid);
+    }
+    else {
+      $snippet_revision = $snippet_revision->condition('is_current', 1);
+    }
 
+    $snippet_revision = $snippet_revision->execute()->fetch();
     $snippet->content = !empty($snippet_revision->content) ? $snippet_revision->content : '' ;
     $snippet->content_format = !empty($snippet_revision->content_format) ? $snippet_revision->content_format : NULL ;
     $snippet->timestamp = !empty($snippet_revision->timestamp) ? $snippet_revision->timestamp : NULL ;
@@ -142,7 +150,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
    *
    *
    */
-  function list_form_submit(&$form, &$form_state) {
+ /* function list_form_submit(&$form, &$form_state) {
     // Filter and re-sort the pages.
     $plugin = $this->plugin;
     $schema = ctools_export_get_schema($this->plugin['schema']);
@@ -195,10 +203,10 @@ class snippet_ctools_export_ui extends ctools_export_ui {
         }
       }
 
-      $operations['snippets_revisions'] = array(
-        'title' => t('Revisions'),
-        'href' => SNIPPET_MENU_PREFIX . '/' . $name . '/revisions',
-        );
+      // $operations['snippets_revisions'] = array(
+      //   'title' => t('Revisions'),
+      //   'href' => SNIPPET_MENU_PREFIX . '/' . $name . '/revisions',
+      //   );
 
       $this->list_build_row($item, $form_state, $operations);
     }
@@ -219,6 +227,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
       $this->rows[$name] = $rows[$name];
     }
   }
+  */
 
   /**
    * Build a row based on the item.
@@ -298,6 +307,41 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     return $header;
   }
 
+  /**
+   *
+   */
+  function revision_page($js, $input, $item) {
+    return snippet_revision_list($item);
+  }
+
+  /**
+   * Page callback to revert to a specific version
+   */
+  function revertto_page($js, $input, $item) {
+    $revision_id = arg(6); // hard coded
+    $revision = $this->load_item($item->name, $revision_id);
+    return drupal_get_form('snippet_revision_revert', $revision);
+  }
+
+  /**
+   * Page callback to view snippet.
+   */
+  function view_page($js, $input, $item) {
+    $revision_id = arg(6); // hard coded
+    $snippet_revision = $this->load_item($item->name, $revision_id);
+
+    // prepare array for theme
+    $variable['rid'] = $snippet_revision->rid;
+    $variable['name'] = $item->name;
+
+    $title = ($snippet_revision->rid) ? $snippet_revision->title_revision  : $snippet->title;
+    $variable['title'] = trim($title);
+    $variable['content'] = $snippet_revision->content;
+
+
+    return theme('snippet_content_show', $variable);
+  }
+
 }
 
 function _save_snippet($values) {
@@ -351,4 +395,85 @@ function snippet_form_build_preview_callback($form, &$form_state) {
 
 function snippet_build_preview($form, &$form_state){
   $form_state['rebuild'] = TRUE;
+}
+
+
+/**
+ * Generate an overview table of older revisions of a node.
+ */
+function snippet_revision_list($snippet) {
+  drupal_set_title(t('Revisions for %title', array('%title' => $snippet->admin_title)), PASS_THROUGH);
+
+  $header = array(t('Revision'), array('data' => t('Operations'), 'colspan' => 2));
+  $snippet_revisions = db_select('snippet_revision', 'sr')
+                      ->fields('sr', array())
+                      ->condition('name', $snippet->name)
+                      ->orderBy('is_current', 'DESC')
+                      ->orderBy('rid', 'DESC')
+                      ->execute()->fetchAll();
+
+  $rows = array();
+  $revert_permission = FALSE;
+
+  if (user_access('edit snippet')) {
+    $revert_permission = TRUE;
+  }
+
+  // if only a version available then don't show revert option
+  if (count($snippet_revisions) == 1) {
+    $revert_permission = FALSE;
+  }
+
+  foreach ($snippet_revisions as $revision) {
+    $row = array();
+    $operations = array();
+    $row[] = array('data' => t('!date', array('!date' => l(format_date($revision->timestamp, 'short'), SNIPPET_MENU_PREFIX . "/$snippet->name/revisions/$revision->rid/view"  ))));
+
+    if ($revert_permission) {
+      $operations[] = l(t('revert'), SNIPPET_MENU_PREFIX . "/$snippet->name/revision/$revision->rid/revertto");
+    }
+    $rows[] = array_merge($row, $operations);
+  }
+
+  $build['snippet_revisions_table'] = array(
+    '#theme' => 'table',
+    '#rows' => $rows,
+    '#header' => $header,
+  );
+  return $build;
+}
+
+
+/**
+ * Ask for confirmation of the reversion to prevent against CSRF attacks.
+ */
+function snippet_revision_revert($form, $form_state, $revision) {
+  $form['#revision'] = $revision;
+  dpm($form);
+  return confirm_form($form,
+                      t('Are you sure you want to revert to the revision from %revision-date?',
+                         array(
+                          '%revision-date' => format_date($revision->timestamp))),
+                          SNIPPET_MENU_PREFIX . "/$revision->name/revision",
+                          '', t('Revert'), t('Cancel'));
+}
+
+/**
+ *
+ * @param $form
+ * @param $form_state
+ */
+function snippet_revision_revert_submit($form, &$form_state) {
+  $snippet_revision = $form['#revision'];
+
+  _snippet_revision_reset_current($snippet_revision->name);
+
+  $revision = new stdClass();
+  $revision->rid = $snippet_revision->rid;
+  $revision->is_current = 1;
+
+  $status = drupal_write_record('snippet_revision', $revision, 'rid');
+  watchdog('snippet content', 'Snippets reverted %title revision %revision.', array( '%title' => $snippet_revision->admin_title, '%revision' => $snippet_revision->rid));
+  drupal_set_message(t('Snippets %title has been reverted back to the revision from %revision-date.', array( '%title' => $snippet_revision->admin_title, '%revision-date' => format_date($snippet_revision->timestamp))));
+  $form_state['redirect'] = SNIPPET_MENU_PREFIX . "/$snippet_revision->name/revision";
 }

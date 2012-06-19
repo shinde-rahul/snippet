@@ -38,60 +38,6 @@ function snippet_ctools_plugin_api($owner, $api) {
 }
 
 /**
- * Implements hook_menu().
- */
-function snippet_menu() {
-
-  $items = array();
-
-  // $items[SNIPPET_LIST_MENU] = array(
-  //   'title' => 'Snippets: Manage',
-  //   'description' => 'Edit and maintain the revisions of snippet.',
-  //   'page callback' => 'drupal_get_form',
-  //   'page arguments' => array('snippet_list_form'),
-  //   'access arguments' => array('edit snippet content'),
-  //   'file' => 'snippet.admin.inc',
-  // );
-
-  // $items[SNIPPET_LIST_MENU . '/%snippet/edit'] = array(
-  //   'title' => 'Edit Snippets',
-  //   'description' => 'Edit snippet.',
-  //   'page callback' => 'drupal_get_form',
-  //   'page arguments' => array('snippet_form', 3),
-  //   'access arguments' => array('edit snippet content'),
-  //   'file' => 'snippet.admin.inc',
-  // );
-
-  $items[SNIPPET_MENU_PREFIX . '/%snippet/revisions'] = array(
-    'title' => 'Revisions',
-    'page callback' => 'snippet_revision_overview',
-    'page arguments' => array(4),
-    'access arguments' => array('edit snippet'),
-    'file' => 'snippet.admin.inc',
-  );
-
-  $items[SNIPPET_MENU_PREFIX . '/%snippet/revisions/%/view'] = array(
-    'title' => 'Revisions',
-    'load arguments' => array(6),
-    'page callback' => 'snippet_revision_view',
-    'page arguments' => array(4),
-    'access arguments' => array('edit snippet'),
-    'file' => 'snippet.admin.inc',
-  );
-
-  $items[SNIPPET_MENU_PREFIX . '/%snippet/revisions/%/revert'] = array(
-    'title' => 'Revisions',
-    'load arguments' => array(6),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('snippet_revision_revert_confirm', 4),
-    'access arguments' => array('edit snippet'),
-    'file' => 'snippet.admin.inc',
-  );
-
-  return $items;
-}
-
-/**
  * Implemetation of hook_permission()
  */
 function snippet_permission() {
@@ -101,17 +47,6 @@ function snippet_permission() {
       'description' => t('Perform administration tasks for snippet.'),
       'restrict access' => TRUE,
   );
-
-  $permissions['access snippet list'] = array(
-      'title' => t('Manage snippet'),
-      'description' => t('Perform managing tasks for snippet.'),
-  );
-
-  $permissions['edit snippet content'] = array(
-      'title' => t('Edit snippet'),
-      'description' => t('Perform editing tasks for snippet content.'),
-  );
-
   $permissions['edit snippet'] = array(
       'title' => t('Add/Edit snippet'),
       'description' => t('Perform adding/editing tasks for snippet.'),
@@ -120,9 +55,6 @@ function snippet_permission() {
       'title' => t('Revert/Delete snippet'),
       'description' => t('Perform revert/delete tasks for snippet.'),
   );
-
-
-
   return $permissions;
 }
 

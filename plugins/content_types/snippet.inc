@@ -98,7 +98,7 @@ function snippet_content_type_render($subtype, $conf, $panel_args, &$context) {
   $variable['rid'] = $snippet_revision->rid;
   $variable['name'] = $snippet->name;
   $title = "";
-  if(!$conf['hide_title']) {
+  if (!$conf['hide_title']) {
     $override_title_text = trim($conf['override_title_text']);
 
     if (!$conf['override_title']) {
