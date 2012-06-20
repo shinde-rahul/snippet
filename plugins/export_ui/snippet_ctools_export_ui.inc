@@ -22,17 +22,6 @@ $plugin = array(
     'menu title' => 'Snippet',
     'menu description' => 'Create a snippet that will be used as a pane.',
     'items' => array(
-      // 'revision' => array(
-      //   'path' => 'list/%ctools_export_ui/revision',
-      //   'title' => 'Revisions',
-      //   'page callback' => 'snippet_revision_list',
-      //   'page arguments' => array(4),
-      //   'access callback' => 'ctools_export_ui_task_access',
-      //   'access arguments' => array('snippet_ctools_export_ui', 'revision', 4),
-      //   'type' => MENU_CALLBACK,
-      //   'weight' => 10,
-      // ),
-
       'revision' => array(
         'path' => 'list/%ctools_export_ui/revision',
         'title' => 'Enable',
@@ -64,8 +53,6 @@ $plugin = array(
         'access arguments' => array('snippet_ctools_export_ui', 'view', 4),
         'type' => MENU_CALLBACK,
       ),
-
-
     ),
   ),
 

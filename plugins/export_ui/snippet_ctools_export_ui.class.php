@@ -1,11 +1,65 @@
 <?php
 /**
- *
+ * @file
+ * Class file for snippet export ui
  */
 class snippet_ctools_export_ui extends ctools_export_ui {
 
-  /**
+    /**
+   * Menu callback to determine if an operation is accessible.
    *
+   * This function enforces a basic access check on the configured perm
+   * string, and then additional checks as needed.
+   *
+   * @param $op
+   *   The 'op' of the menu item, which is defined by 'allowed operations'
+   *   and embedded into the arguments in the menu item.
+   * @param $item
+   *   If an op that works on an item, then the item object, otherwise NULL.
+   *
+   * @return
+   *   TRUE if the current user has access, FALSE if not.
+   */
+  function access($op, $item) {
+    if (!user_access($this->plugin['access'])) {
+      return FALSE;
+    }
+
+    // More fine-grained access control:
+    if ($op == 'add' && (!user_access($this->plugin['create access']) || !user_access('manage snippet'))) {
+      return FALSE;
+    }
+
+    // More fine-grained access control:
+    if (($op == 'revert' || $op == 'delete') && (!user_access($this->plugin['delete access']) || !user_access('manage snippet'))) {
+      return FALSE;
+    }
+
+    // If we need to do a token test, do it here.
+    if (!empty($this->plugin['allowed operations'][$op]['token']) && (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], $op))) {
+      return FALSE;
+    }
+
+    switch ($op) {
+      case 'import':
+        return user_access('use PHP for settings');
+      case 'revert':
+        return ($item->export_type & EXPORT_IN_DATABASE) && ($item->export_type & EXPORT_IN_CODE);
+      case 'delete':
+        return ($item->export_type & EXPORT_IN_DATABASE) && !($item->export_type & EXPORT_IN_CODE);
+      case 'disable':
+        return empty($item->disabled);
+      case 'enable':
+        return !empty($item->disabled);
+      case 'revision':
+        return (($item->rid) ? TRUE : FALSE);
+      default:
+        return TRUE;
+    }
+  }
+
+  /**
+   * Adding or editing snippet
    * @param $form
    * @param $form_state
    */
@@ -19,14 +73,20 @@ class snippet_ctools_export_ui extends ctools_export_ui {
 
     // adding parent element
     parent::edit_form($form, $form_state);
-
     if ($form_state['form type'] == 'clone') {
       $default_snippet = $this->load_item($form_state['original name']);
+    }
+    elseif ($form_state['form type'] == 'add') {
+      $default_snippet = $form_state['item'];
+      $default_snippet->rid = NULL;
+      $default_snippet->content = '';
     }
     else {
       $default_snippet = $form_state['item'];
     }
 
+    // Needs to disable the admin_tile and name (machine name) fields for
+    // editing snippet
     if ($form_state['op'] == 'edit') {
       $form['info']['admin_title']['#disabled'] = TRUE;
       $form['info']['name']['#disabled'] = TRUE;
@@ -44,7 +104,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
       '#title' => t('Content'),
       '#description' => t('Description of this snippet.'),
       '#default_value' => $default_snippet->content,
-      '#format' => $default_snippet->content_format,
+      '#format' => @$default_snippet->content_format,
     );
 
     $form['preview'] = array(
@@ -57,6 +117,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
         'callback' => 'snippet_form_build_preview_callback',
         'wrapper' => 'snippet_preview',
         ),
+      '#weight' => 101,
       );
 
     $form['snippet_preview_wrapper'] = array(
@@ -67,7 +128,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
   }
 
   /**
-   *
+   * Validate the snippet details
    * @param $form
    * @param $form_state
    */
@@ -86,7 +147,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
   }
 
   /**
-   *
+   * Loads the snippet data
    * @param $item_name
    */
   function load_item($item_name, $rid = NULL) {
@@ -96,8 +157,6 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     $snippet_revision = db_select('snippet_revision', 'sr')
                         ->fields('sr', array())
                         ->condition('name', $item_name);
-                        // ->condition('is_current', 1)
-                        // ->execute()->fetch();
     if ($rid) {
       $snippet_revision = $snippet_revision->condition('rid', $rid);
     }
@@ -145,89 +204,6 @@ class snippet_ctools_export_ui extends ctools_export_ui {
       drupal_set_message($message, 'error');
     }
   }
-
-  /**
-   *
-   *
-   */
- /* function list_form_submit(&$form, &$form_state) {
-    // Filter and re-sort the pages.
-    $plugin = $this->plugin;
-    $schema = ctools_export_get_schema($this->plugin['schema']);
-
-    $prefix = ctools_export_ui_plugin_base_path($plugin);
-
-    foreach ($this->items as $name => $item) {
-      // Call through to the filter and see if we're going to render this
-      // row. If it returns TRUE, then this row is filtered out.
-      if ($this->list_filter($form_state, $item)) {
-        continue;
-      }
-
-      // Note: Creating this list seems a little clumsy, but can't think of
-      // better ways to do this.
-      $allowed_operations = drupal_map_assoc(array_keys($plugin['allowed operations']));
-      $not_allowed_operations = array('import');
-
-      if ($item->{$schema['export']['export type string']} == t('Normal')) {
-        $not_allowed_operations[] = 'revert';
-      }
-      elseif ($item->{$schema['export']['export type string']} == t('Overridden')) {
-        $not_allowed_operations[] = 'delete';
-      }
-      else {
-        $not_allowed_operations[] = 'revert';
-        $not_allowed_operations[] = 'delete';
-      }
-
-      $not_allowed_operations[] = empty($item->disabled) ? 'enable' : 'disable';
-
-      foreach ($not_allowed_operations as $op) {
-        // Remove the operations that are not allowed for the specific
-        // exportable.
-        unset($allowed_operations[$op]);
-      }
-
-      $operations = array();
-
-      foreach ($allowed_operations as $op) {
-        $operations[$op] = array(
-          'title' => $plugin['allowed operations'][$op]['title'],
-          'href' => ctools_export_ui_plugin_menu_path($plugin, $op, $name),
-        );
-        if (!empty($plugin['allowed operations'][$op]['ajax'])) {
-          $operations[$op]['attributes'] = array('class' => array('use-ajax'));
-        }
-        if (!empty($plugin['allowed operations'][$op]['token'])) {
-          $operations[$op]['query'] = array('token' => drupal_get_token($op));
-        }
-      }
-
-      // $operations['snippets_revisions'] = array(
-      //   'title' => t('Revisions'),
-      //   'href' => SNIPPET_MENU_PREFIX . '/' . $name . '/revisions',
-      //   );
-
-      $this->list_build_row($item, $form_state, $operations);
-    }
-
-    // Now actually sort
-    if ($form_state['values']['sort'] == 'desc') {
-      arsort($this->sorts);
-    }
-    else {
-      asort($this->sorts);
-    }
-
-    // Nuke the original.
-    $rows = $this->rows;
-    $this->rows = array();
-    // And restore.
-    foreach ($this->sorts as $name => $title) {
-      $this->rows[$name] = $rows[$name];
-    }
-  }
-  */
 
   /**
    * Build a row based on the item.
@@ -308,7 +284,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
   }
 
   /**
-   *
+   * Page callback to see revisions
    */
   function revision_page($js, $input, $item) {
     return snippet_revision_list($item);
@@ -344,6 +320,9 @@ class snippet_ctools_export_ui extends ctools_export_ui {
 
 }
 
+/**
+ * Helper function to save the snippet data
+ */
 function _save_snippet($values) {
   // need to set  is_current to 0 before setting up the new one
   _snippet_revision_reset_current($values['name']);
@@ -361,7 +340,7 @@ function _save_snippet($values) {
 }
 
 /**
- *
+ * Reset the snippet's current state
  * @param $name
  */
 function _snippet_revision_reset_current($name) {
@@ -459,7 +438,7 @@ function snippet_revision_revert($form, $form_state, $revision) {
 }
 
 /**
- *
+ * Revert to the given rid
  * @param $form
  * @param $form_state
  */
@@ -477,3 +456,4 @@ function snippet_revision_revert_submit($form, &$form_state) {
   drupal_set_message(t('Snippets %title has been reverted back to the revision from %revision-date.', array( '%title' => $snippet_revision->admin_title, '%revision-date' => format_date($snippet_revision->timestamp))));
   $form_state['redirect'] = SNIPPET_MENU_PREFIX . "/$snippet_revision->name/revision";
 }
+

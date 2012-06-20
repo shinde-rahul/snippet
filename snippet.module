@@ -11,10 +11,6 @@
  */
 define('SNIPPET_MENU_PREFIX', 'admin/structure/snippet/list');
 
-/**
- * Menu item prefix.
- */
-define('SNIPPET_LIST_MENU', SNIPPET_MENU_PREFIX . '/snippet-list');
 
 /**
  * Implementation of hook_ctools_plugin_directory().
@@ -23,7 +19,7 @@ define('SNIPPET_LIST_MENU', SNIPPET_MENU_PREFIX . '/snippet-list');
  */
 function snippet_ctools_plugin_directory($module, $type) {
   // Load the plugins.
-    return "plugins/{$type}";
+  return "plugins/{$type}";
 }
 
 /**
@@ -43,17 +39,21 @@ function snippet_ctools_plugin_api($owner, $api) {
 function snippet_permission() {
   $permissions = array();
   $permissions['administer snippet'] = array(
-      'title' => t('Administer snippet'),
-      'description' => t('Perform administration tasks for snippet.'),
-      'restrict access' => TRUE,
+    'title' => t('Administer snippet'),
+    'description' => t('Perform administration tasks for snippet.'),
+    'restrict access' => TRUE,
+  );
+  $permissions['manage snippet'] = array(
+    'title' => t('Manage snippet'),
+    'description' => t('Manages snippet.'),
   );
   $permissions['edit snippet'] = array(
-      'title' => t('Add/Edit snippet'),
-      'description' => t('Perform adding/editing tasks for snippet.'),
+    'title' => t('Add/Edit snippet'),
+    'description' => t('Perform adding/editing tasks for snippet.'),
   );
   $permissions['delete snippet'] = array(
-      'title' => t('Revert/Delete snippet'),
-      'description' => t('Perform revert/delete tasks for snippet.'),
+    'title' => t('Revert/Delete snippet'),
+    'description' => t('Perform revert/delete tasks for snippet.'),
   );
   return $permissions;
 }
