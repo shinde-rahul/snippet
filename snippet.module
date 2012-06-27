@@ -110,7 +110,7 @@ function theme_snippet_content_show($vars) {
   $in_preview = isset($vars['in_preview']) ? $vars['in_preview'] : 0;
 
   $snippet_contextual_links = $heighlight = $heighlight_style = $edit = $preview_heading = "";
-  if (user_access('edit snippet') && (!$in_preview)) {
+  if (user_access('manage snippet') && (!$in_preview)) {
     $heighlight = "snippet-highlight";
     $heighlight_style = "style='background: #FFFFEA;'";
 
@@ -124,7 +124,7 @@ function theme_snippet_content_show($vars) {
     );
     $operations['links']['revert'] = array(
       'title' => t('Revisions'),
-      'href' => SNIPPET_MENU_PREFIX . "/" . $vars['name'] . "/revisions",
+      'href' => SNIPPET_MENU_PREFIX . "/" . $vars['name'] . "/revision",
       'query' => $destination,
       );
     $operations['attributes'] = array('class' => array('links', 'inline'));

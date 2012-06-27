@@ -31,12 +31,18 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     }
 
     // More fine-grained access control:
-    if (($op == 'revert' || $op == 'delete') && (!user_access($this->plugin['delete access']) || !user_access('manage snippet'))) {
+    if (($op == 'revert' || $op == 'delete')
+      && (!user_access($this->plugin['delete access']) || !user_access('manage snippet'))) {
       return FALSE;
     }
 
     // If we need to do a token test, do it here.
-    if (!empty($this->plugin['allowed operations'][$op]['token']) && (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], $op))) {
+    if (!empty($this->plugin['allowed operations'][$op]['token'])
+      && (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], $op))) {
+      return FALSE;
+    }
+
+    if ($op == 'revision' && !user_access('manage snippet')) {
       return FALSE;
     }
 
@@ -51,8 +57,8 @@ class snippet_ctools_export_ui extends ctools_export_ui {
         return empty($item->disabled);
       case 'enable':
         return !empty($item->disabled);
-      case 'revision':
-        return (($item->rid) ? TRUE : FALSE);
+      // case 'revision':
+      //   return (($item->rid) ? TRUE : FALSE);
       default:
         return TRUE;
     }
@@ -394,7 +400,7 @@ function snippet_revision_list($snippet) {
   $rows = array();
   $revert_permission = FALSE;
 
-  if (user_access('edit snippet')) {
+  if (user_access('manage snippet')) {
     $revert_permission = TRUE;
   }
 

@@ -1,5 +1,5 @@
 ; $Id: snippet.info $
-name = Text-container exportable
+name = Snippets
 description = "Provides a text-container exportable."
 
 version = 7.x
