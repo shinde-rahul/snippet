@@ -5,3 +5,4 @@ description = "Provides a text-container exportable."
 version = 7.x
 core = 7.x
 project = snippet
+dependencies[] = ctools

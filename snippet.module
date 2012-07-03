@@ -45,15 +45,7 @@ function snippet_permission() {
   );
   $permissions['manage snippet'] = array(
     'title' => t('Manage snippet'),
-    'description' => t('Manages snippet.'),
-  );
-  $permissions['edit snippet'] = array(
-    'title' => t('Add/Edit snippet'),
-    'description' => t('Perform adding/editing tasks for snippet.'),
-  );
-  $permissions['delete snippet'] = array(
-    'title' => t('Revert/Delete snippet'),
-    'description' => t('Perform revert/delete tasks for snippet.'),
+    'description' => t('Allow user to create, modify snippet as well see revisions, revert to perticuler revision of the snippet'),
   );
   return $permissions;
 }
@@ -64,7 +56,7 @@ function snippet_permission() {
  *  machine understanable name of the snippet which wants to get loaded
  */
 function snippet_load($snippet_name, $rid = NULL) {
-  if ( $snippet_name) {
+  if ($snippet_name) {
     ctools_include('export');
     $snippet = ctools_export_crud_load('snippet', $snippet_name);
 
@@ -150,4 +142,5 @@ function theme_snippet_content_show($vars) {
   $output = "<div class = \"snippet-view {$heighlight}\" {$heighlight_style}>" . $preview_heading . $title . $content . $snippet_contextual_links . "</div>";
   return $output;
 }
+
 

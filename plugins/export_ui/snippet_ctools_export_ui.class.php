@@ -26,23 +26,23 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     }
 
     // More fine-grained access control:
-    if ($op == 'add' && (!user_access($this->plugin['create access']) || !user_access('manage snippet'))) {
+    if ($op == 'add' && !user_access($this->plugin['create access'])) {
       return FALSE;
     }
 
     // More fine-grained access control:
-    if (($op == 'revert' || $op == 'delete')
-      && (!user_access($this->plugin['delete access']) || !user_access('manage snippet'))) {
+    if (($op == 'revert' || $op == 'delete') && !user_access($this->plugin['delete access'])) {
+      return FALSE;
+    }
+
+    // More fine-grained access control:
+    if ($op == 'revision' && !user_access($this->plugin['create access'])) {
       return FALSE;
     }
 
     // If we need to do a token test, do it here.
     if (!empty($this->plugin['allowed operations'][$op]['token'])
       && (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], $op))) {
-      return FALSE;
-    }
-
-    if ($op == 'revision' && !user_access('manage snippet')) {
       return FALSE;
     }
 
@@ -57,8 +57,6 @@ class snippet_ctools_export_ui extends ctools_export_ui {
         return empty($item->disabled);
       case 'enable':
         return !empty($item->disabled);
-      // case 'revision':
-      //   return (($item->rid) ? TRUE : FALSE);
       default:
         return TRUE;
     }
@@ -186,7 +184,6 @@ class snippet_ctools_export_ui extends ctools_export_ui {
    */
   function edit_save_form($form_state) {
     $item = &$form_state['item'];
-    // dpm($item);
     $export_key = $this->plugin['export']['key'];
 
     $operation_type = $form_state['op'];
@@ -195,13 +192,13 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     // table to have complete information
     if ( $operation_type == 'add') {
       $result = ctools_export_crud_save($this->plugin['schema'], $item);
-      _save_snippet($form_state['values']);
+      $result = _save_snippet($form_state['values']);
     }
     elseif ( $operation_type == 'edit') {
       $result = _save_snippet($form_state['values']);
     }
 
-    if (@$result) {
+    if ($result) {
       $message = str_replace('%title', check_plain($item->{$export_key}), $this->plugin['strings']['confirmation'][$form_state['op']]['success']);
       drupal_set_message($message);
     }
@@ -424,6 +421,7 @@ function snippet_revision_list($snippet) {
     '#theme' => 'table',
     '#rows' => $rows,
     '#header' => $header,
+    '#empty' => t('There is no revisions for %title to list.', array('%title' => $snippet->admin_title)),
   );
   return $build;
 }
@@ -434,7 +432,6 @@ function snippet_revision_list($snippet) {
  */
 function snippet_revision_revert($form, $form_state, $revision) {
   $form['#revision'] = $revision;
-  dpm($form);
   return confirm_form($form,
                       t('Are you sure you want to revert to the revision from %revision-date?',
                          array(
