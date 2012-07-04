@@ -21,7 +21,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
    *   TRUE if the current user has access, FALSE if not.
    */
   function access($op, $item) {
-    if (!user_access($this->plugin['access'])) {
+    if (!user_access($this->plugin['create access'])) {
       return FALSE;
     }
 
@@ -409,7 +409,7 @@ function snippet_revision_list($snippet) {
   foreach ($snippet_revisions as $revision) {
     $row = array();
     $operations = array();
-    $row[] = array('data' => t('!date', array('!date' => l(format_date($revision->timestamp, 'short'), SNIPPET_MENU_PREFIX . "/$snippet->name/revisions/$revision->rid/view"  ))));
+    $row[] = array('data' => t('!date', array('!date' => l(format_date($revision->timestamp, 'short'), SNIPPET_MENU_PREFIX . "/$snippet->name/revision/$revision->rid/view"  ))));
 
     if ($revert_permission) {
       $operations[] = l(t('revert'), SNIPPET_MENU_PREFIX . "/$snippet->name/revision/$revision->rid/revertto");
