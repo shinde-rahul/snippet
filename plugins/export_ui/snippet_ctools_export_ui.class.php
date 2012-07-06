@@ -31,7 +31,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     }
 
     // More fine-grained access control:
-    if (($op == 'revert' || $op == 'delete') && !user_access($this->plugin['delete access'])) {
+    if (($op == 'revert' || $op == 'revertto' || $op == 'delete') && !user_access($this->plugin['delete access'])) {
       return FALSE;
     }
 
