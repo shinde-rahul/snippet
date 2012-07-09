@@ -9,7 +9,8 @@
 $plugin = array(
   'schema' => 'snippet',  // As defined in hook_schema().
   'access' => 'administer snippet',  // Define a permission users must have to access these pages.
-  'create access' => 'manage snippet',
+  'create access' => 'administer snippet',
+  'manage access' => 'manage snippet',
   'delete access' => 'administer snippet',
 
   'export' => array(

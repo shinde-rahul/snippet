@@ -21,7 +21,7 @@ class snippet_ctools_export_ui extends ctools_export_ui {
    *   TRUE if the current user has access, FALSE if not.
    */
   function access($op, $item) {
-    if (!user_access($this->plugin['create access'])) {
+    if (!user_access($this->plugin['manage access'])) {
       return FALSE;
     }
 
@@ -31,12 +31,18 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     }
 
     // More fine-grained access control:
-    if (($op == 'revert' || $op == 'revertto' || $op == 'delete') && !user_access($this->plugin['delete access'])) {
+    if ($op == 'delete' && !user_access($this->plugin['delete access'])) {
+      return FALSE;
+    }
+
+
+    // More fine-grained access control:
+    if (($op == 'revert' || $op == 'revertto' || $op == 'revision') && !user_access($this->plugin['manage access'])) {
       return FALSE;
     }
 
     // More fine-grained access control:
-    if ($op == 'revision' && !user_access($this->plugin['create access'])) {
+    if (($op == 'export' || $op == 'clone') && !user_access($this->plugin['access'])) {
       return FALSE;
     }
 
@@ -256,7 +262,16 @@ class snippet_ctools_export_ui extends ctools_export_ui {
     }
     $this->rows[$name]['data'][] = array('data' => $label, 'class' => array('ctools-export-ui-title'));
 
-    $ops = theme('links__ctools_dropbutton', array('links' => $operations, 'attributes' => array('class' => array('links', 'inline'))));
+    // short down the list of operation as per permission
+    $snippet_operations = array();
+    foreach ($operations as $key => $value) {
+      $do_list = ($key == 'enable' || $key == 'disable') ? TRUE : $this->access($key, $item);
+      if ($do_list) {
+        $snippet_operations[$key] = $value;
+      }
+    }
+
+    $ops = theme('links__ctools_dropbutton', array('links' => $snippet_operations, 'attributes' => array('class' => array('links', 'inline'))));
 
     $this->rows[$name]['data'][] = array('data' => $ops, 'class' => array('ctools-export-ui-operations'));
 
