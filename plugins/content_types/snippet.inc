@@ -47,7 +47,8 @@ function snippet_content_type_edit_form($form, &$form_state) {
   // Create an option array
   $snippet_options = array();
   foreach ($options as $key => $value) {
-    $snippet_options[$key] = $value->title;
+    $title = ($value->title) ? $value->title : $value->admin_title;
+    $snippet_options[$key] = $title;
   }
 
   if (!count($snippet_options)) {
